@@ -20,24 +20,73 @@ A portfolio project demonstrating how a small containerized web application can 
 ## Architecture
 
 ```mermaid
+
 flowchart TB
-    U[User / Browser] --> ALB[Application Load Balancer<br/>Public subnets]
-    ALB --> FE[Frontend ECS Service<br/>Fargate / Private subnets]
-    FE -->|HTTP via Service Connect<br/>backend:5001| BE[Backend ECS Service<br/>Fargate / Private subnets]
-    subgraph VPC[Custom AWS VPC]
-      subgraph Public[Public subnets - 2 AZs]
-        ALB
-      end
-      subgraph Private[Private subnets - 2 AZs]
-        FE
-        BE
-      end
-      VPCE[VPC endpoints<br/>ECR, Logs, S3]
-      FLOW[VPC Flow Logs]
+    User(("Internet User"))
+
+    subgraph AWS["AWS Cloud"]
+        IGW["Internet Gateway"]
+
+        subgraph VPC["Custom VPC - 10.20.0.0/16"]
+            subgraph Public["Public Subnets - 2 AZs"]
+                ALB["Application Load Balancer"]
+            end
+
+            subgraph Private["Private Subnets - 2 AZs"]
+                FE["Frontend ECS Service<br/>Fargate"]
+                BE["Backend ECS Service<br/>Fargate"]
+            end
+
+            SC["ECS Service Connect<br/>Internal Discovery"]
+
+            subgraph Endpoints["VPC Endpoints"]
+                ECRAPI["ECR API Endpoint"]
+                ECRDocker["ECR Docker Endpoint"]
+                LogsEP["CloudWatch Logs Endpoint"]
+                S3EP["S3 Gateway Endpoint"]
+            end
+
+            FlowLogs["VPC Flow Logs"]
+        end
+
+        ECR["Amazon ECR"]
+        CW["Amazon CloudWatch Logs"]
+        S3["Amazon S3"]
     end
-    FE -. image pull / logs .-> VPCE
-    BE -. image pull / logs .-> VPCE
-    VPC -. network telemetry .-> FLOW
+
+    User --> IGW
+    IGW --> ALB
+    ALB -->|HTTP : 8080| FE
+    FE -->|HTTP : 5001| SC
+    SC --> BE
+
+    FE -.-> ECRAPI
+    FE -.-> ECRDocker
+    BE -.-> ECRAPI
+    BE -.-> ECRDocker
+
+    ECRAPI -.-> ECR
+    ECRDocker -.-> ECR
+    FE -.-> LogsEP
+    BE -.-> LogsEP
+    LogsEP -.-> CW
+
+    FE -.-> S3EP
+    BE -.-> S3EP
+    S3EP -.-> S3
+
+    FlowLogs --> CW
+
+    classDef public fill:#dbeafe,stroke:#2563eb,color:#172554
+    classDef compute fill:#dcfce7,stroke:#16a34a,color:#14532d
+    classDef network fill:#fef3c7,stroke:#d97706,color:#78350f
+    classDef monitoring fill:#f3e8ff,stroke:#9333ea,color:#581c87
+
+    class ALB,IGW public
+    class FE,BE compute
+    class SC,ECRAPI,ECRDocker,LogsEP,S3EP network
+    class FlowLogs,CW monitoring
+
 ```
 
 ## Repository layout
