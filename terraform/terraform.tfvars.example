@@ -1,0 +1,4 @@
+# Copy to terraform.tfvars and replace with real ECR image URIs.
+# Do not commit terraform.tfvars.
+frontend_image = "ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/fargate-frontend:latest"
+backend_image  = "ACCOUNT_ID.dkr.ecr.ap-south-1.amazonaws.com/fargate-backend:latest"

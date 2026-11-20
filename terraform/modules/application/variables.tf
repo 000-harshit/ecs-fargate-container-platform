@@ -1,0 +1,9 @@
+variable "project_name" { type = string }
+variable "vpc_id" { type = string }
+variable "vpc_cidr" { type = string }
+variable "public_subnets" { type = list(string) }
+variable "private_subnets" { type = list(string) }
+variable "frontend_image" { type = string }
+variable "backend_image" { type = string }
+variable "desired_count" { type = number }
+variable "tags" { type = map(string) }

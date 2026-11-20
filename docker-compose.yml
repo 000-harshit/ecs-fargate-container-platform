@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: .
+    environment:
+      APP_ROLE: backend
+      PORT: "5001"
+    command: ["python", "app.py"]
+    ports:
+      - "5001:5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  frontend:
+    build: .
+    environment:
+      APP_ROLE: frontend
+      PORT: "8080"
+      BACKEND_URL: http://backend:5001
+    command: ["python", "app.py"]
+    ports:
+      - "8080:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
